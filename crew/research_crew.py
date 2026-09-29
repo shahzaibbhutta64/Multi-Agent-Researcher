@@ -1,6 +1,31 @@
-from crewai import Crew, Process
+from crewai import Crew, Process, LLM
 from agents.research_agents import ResearchAgents
 from tasks.research_tasks import ResearchTasks
+
+# --- GROQ FIX: Monkey-patch CrewAI message formatter to strip cache_breakpoint ---
+try:
+    from crewai.llm import LLM as CrewLLM
+    original_format_messages = getattr(CrewLLM, "_format_messages", None)
+    
+    if original_format_messages:
+        def patched_format_messages(self, messages, *args, **kwargs):
+            formatted = original_format_messages(self, messages, *args, **kwargs)
+            if isinstance(formatted, list):
+                clean_messages = []
+                for msg in formatted:
+                    if isinstance(msg, dict):
+                        # Strip cache_breakpoint from message dictionary
+                        clean_msg = {k: v for k, v in msg.items() if k != "cache_breakpoint"}
+                        clean_messages.append(clean_msg)
+                    else:
+                        clean_messages.append(msg)
+                return clean_messages
+            return formatted
+            
+        CrewLLM._format_messages = patched_format_messages
+except Exception:
+    pass
+# ----------------------------------------------------------------------------------
 
 class MultiAgentResearchCrew:
     def __init__(self, api_key: str, model_name: str = "groq/llama-3.3-70b-versatile"):
