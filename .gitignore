@@ -1,0 +1,14 @@
+# Python environment and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Streamlit secrets (local execution)
+.streamlit/secrets.toml
+
+# System files
+.DS_Store
+Thumbs.db
