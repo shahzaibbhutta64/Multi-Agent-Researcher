@@ -1,9 +1,13 @@
+import litellm
 from crewai import Agent, LLM
 from tools.web_search import DuckDuckGoSearchTool
 
+# Tell LiteLLM to strip parameters that Groq doesn't support (like cache_breakpoint)
+litellm.drop_params = True
+
 class ResearchAgents:
     def __init__(self, api_key: str, model_name: str = "groq/llama-3.3-70b-versatile"):
-        # Configure LLM using CrewAI's universal LLM interface with Groq
+        # Configure LLM using CrewAI's LLM wrapper
         self.llm = LLM(
             model=model_name,
             api_key=api_key
