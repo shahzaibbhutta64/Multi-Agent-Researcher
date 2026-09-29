@@ -19,8 +19,7 @@ def main():
         "Select Groq Model",
         options=[
             "groq/llama-3.3-70b-versatile",
-            "groq/llama-3.1-8b-instant",
-            "groq/mixtral-8x7b-32768"
+            "groq/llama-3.1-8b-instant"
         ],
         index=0
     )
