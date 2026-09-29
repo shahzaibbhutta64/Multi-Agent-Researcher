@@ -6,7 +6,6 @@ from tools.web_search import DuckDuckGoSearchTool
 
 class GroqLLM(LLM):
     """Custom LLM wrapper for Groq that strips the 'cache_breakpoint' key 
-
     injected by CrewAI before passing messages to LiteLLM/Groq.
     """
 
@@ -50,12 +49,12 @@ class ResearchAgents:
     def __init__(
         self,
         api_key: str,
-        model_name: str = "groq/llama-3.3-70b-versatile",
+        model_name: str = "groq/openai/gpt-oss-120b",
     ):
         # Explicitly set the environment variable for Groq authentication
         os.environ["GROQ_API_KEY"] = api_key
 
-        # Use our safe GroqLLM wrapper instead of standard LLM
+        # Use our safe GroqLLM wrapper
         self.llm = GroqLLM(model=model_name, api_key=api_key)
         self.search_tool = DuckDuckGoSearchTool()
 
