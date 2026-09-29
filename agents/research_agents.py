@@ -1,75 +1,61 @@
-import os
-import litellm
-from crewai import Agent, LLM
-from tools.web_search import DuckDuckGoSearchTool
+from crewai import Crew, Process, LLM
+from agents.research_agents import ResearchAgents
+from tasks.research_tasks import ResearchTasks
 
-# Tell LiteLLM to automatically strip unsupported parameters (like cache_breakpoint) for Groq
-litellm.drop_params = True
+# --- GROQ FIX: Monkey-patch CrewAI message formatter to strip cache_breakpoint ---
+try:
+    from crewai.llm import LLM as CrewLLM
+    original_format_messages = getattr(CrewLLM, "_format_messages", None)
+    
+    if original_format_messages:
+        def patched_format_messages(self, messages, *args, **kwargs):
+            formatted = original_format_messages(self, messages, *args, **kwargs)
+            if isinstance(formatted, list):
+                clean_messages = []
+                for msg in formatted:
+                    if isinstance(msg, dict):
+                        # Strip cache_breakpoint from message dictionary
+                        clean_msg = {k: v for k, v in msg.items() if k != "cache_breakpoint"}
+                        clean_messages.append(clean_msg)
+                    else:
+                        clean_messages.append(msg)
+                return clean_messages
+            return formatted
+            
+        CrewLLM._format_messages = patched_format_messages
+except Exception:
+    pass
+# ----------------------------------------------------------------------------------
 
-class ResearchAgents:
+class MultiAgentResearchCrew:
     def __init__(self, api_key: str, model_name: str = "groq/llama-3.3-70b-versatile"):
-        # Set environment variable so LiteLLM and CrewAI can locate the key automatically
-        os.environ["GROQ_API_KEY"] = api_key
+        self.api_key = api_key
+        self.model_name = model_name
 
-        # Initialize CrewAI LLM wrapper
-        self.llm = LLM(
-            model=model_name,
-            api_key=api_key
-        )
-        self.search_tool = DuckDuckGoSearchTool()
+    def run(self, topic: str) -> str:
+        # Instantiate Agents & Tasks
+        agents = ResearchAgents(api_key=self.api_key, model_name=self.model_name)
+        tasks = ResearchTasks()
 
-    def general_researcher(self) -> Agent:
-        return Agent(
-            role="General Researcher",
-            goal="Discover comprehensive background facts, statistics, and high-level summaries on the user's topic.",
-            backstory=(
-                "You are an experienced investigative research journalist. Your specialty is gathering broad, "
-                "reliable information and discovering relevant background data across credible web sources."
-            ),
-            tools=[self.search_tool],
-            llm=self.llm,
-            verbose=True,
-            allow_delegation=False
-        )
+        # Build Agents
+        gen_researcher = agents.general_researcher()
+        tech_researcher = agents.technical_researcher()
+        checker = agents.fact_checker()
+        writer = agents.report_writer()
 
-    def technical_researcher(self) -> Agent:
-        return Agent(
-            role="Technical and Critical Researcher",
-            goal="Investigate technical mechanisms, architecture, real-world applications, risks, and limitations.",
-            backstory=(
-                "You are an analytical domain expert and systems analyst. You dive into technical mechanics, "
-                "evaluate claim feasibility, uncover potential failure modes, and identify concrete implementation details."
-            ),
-            tools=[self.search_tool],
-            llm=self.llm,
-            verbose=True,
-            allow_delegation=False
+        # Build Tasks
+        t1 = tasks.general_research_task(gen_researcher, topic)
+        t2 = tasks.technical_research_task(tech_researcher, topic)
+        t3 = tasks.fact_checking_task(checker, topic)
+        t4 = tasks.report_writing_task(writer, topic)
+
+        # Build and kickoff Crew execution sequentially
+        crew = Crew(
+            agents=[gen_researcher, tech_researcher, checker, writer],
+            tasks=[t1, t2, t3, t4],
+            process=Process.sequential,
+            verbose=True
         )
 
-    def fact_checker(self) -> Agent:
-        return Agent(
-            role="Research Analyst and Fact Checker",
-            goal="Verify claims from research findings, eliminate duplicated information, and resolve conflicting information.",
-            backstory=(
-                "You are a meticulous lead researcher and fact-checker. You filter noise, identify contradictory statements, "
-                "validate information against credible source URLs, and curate only high-confidence insights."
-            ),
-            tools=[],
-            llm=self.llm,
-            verbose=True,
-            allow_delegation=False
-        )
-
-    def report_writer(self) -> Agent:
-        return Agent(
-            role="Senior Technical Report Writer",
-            goal="Synthesize verified research findings into a clear, beautifully structured report with explicit source citations.",
-            backstory=(
-                "You are an expert technical editor. You write executive summaries and full structured reports that translate "
-                "complex insights into clear sections while maintaining clear source URL attributions."
-            ),
-            tools=[],
-            llm=self.llm,
-            verbose=True,
-            allow_delegation=False
-        )
+        result = crew.kickoff()
+        return str(result)
