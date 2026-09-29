@@ -11,16 +11,16 @@ st.set_page_config(
 
 def main():
     st.title("🤖 Multi-Agent AI Research Assistant")
-    st.caption("Powered by CrewAI, Groq (Llama-3.3-70B), and DuckDuckGo Search")
+    st.caption("Powered by CrewAI, Groq (GPT-OSS-120B), and DuckDuckGo Search")
 
     # Sidebar settings
     st.sidebar.header("Configuration")
     model_name = st.sidebar.selectbox(
         "Select Groq Model",
         options=[
+            "groq/openai/gpt-oss-120b",
             "groq/llama-3.3-70b-versatile",
-            "groq/llama-3.1-8b-instant",
-            "groq/mixtral-8x7b-32768"
+            "groq/llama-3.1-8b-instant"
         ],
         index=0
     )
