@@ -2,56 +2,100 @@ import streamlit as st
 from utils.helpers import validate_groq_api_key
 from crew.research_crew import MultiAgentResearchCrew
 
+# Fixed background model
+DEFAULT_MODEL = "groq/openai/gpt-oss-20b"
+
 # Streamlit Page Config
 st.set_page_config(
     page_title="Multi-Agent AI Research Assistant",
-    page_icon="🤖",
-    layout="wide"
+    page_icon="🔬",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 def main():
-    st.title("🤖 Multi-Agent AI Research Assistant")
-    st.caption("Powered by CrewAI, Groq (GPT-OSS 20B), and DuckDuckGo Search")
+    # --- SIDEBAR ---
+    with st.sidebar:
+        st.title("🔬 Research Assistant")
+        st.caption("Autonomous Multi-Agent Intelligence System")
+        st.markdown("---")
 
-    # Sidebar settings
-    st.sidebar.header("Configuration")
-    model_name = st.sidebar.selectbox(
-        "Select Groq Model",
-        options=[
-            "groq/openai/gpt-oss-20b",
-            "groq/openai/gpt-oss-120b",
-            "groq/llama-3.3-70b-versatile",
-            "groq/llama-3.1-8b-instant"
-        ],
-        index=0  # Sets groq/openai/gpt-oss-20b as the primary default
+        # Application Purpose
+        st.subheader("🎯 Application Purpose")
+        st.write(
+            "An enterprise-grade autonomous research system designed to conduct "
+            "deep web inquiries, cross-verify information, and draft publication-ready "
+            "technical reports without manual intervention."
+        )
+
+        st.markdown("---")
+
+        # Input & Output Guide
+        st.subheader("📥 Input Required")
+        st.info("• **Research Topic**: Any technical, scientific, or industry domain concept.")
+
+        st.subheader("📤 Output Generated")
+        st.success(
+            "• **Structured Markdown Report** covering Executive Summary, Technical Details, "
+            "Risks, Real-World Applications, and Verified Source Citations."
+        )
+
+        st.markdown("---")
+
+        # Agent Architecture Breakdown
+        st.subheader("🤖 Autonomous Agent Team")
+        st.markdown(
+            """
+            1. **General Researcher**: Scours live web data for general background and key stats.
+            2. **Technical Analyst**: Investigates core mechanisms, architecture, and risks.
+            3. **Fact Checker**: Audits findings, resolves contradictions, and validates sources.
+            4. **Report Writer**: Synthesizes verified data into a formal publication-ready report.
+            """
+        )
+
+        st.markdown("---")
+        st.caption("Developed by Shahzaib | GitHub: shahzaibbhutta64")
+
+    # --- MAIN PAGE UI ---
+    st.title("🤖 Autonomous Multi-Agent Research Assistant")
+    st.markdown(
+        "Powered by **CrewAI**, **Groq (GPT-OSS 20B)**, and **DuckDuckGo Live Web Search**."
     )
-    
-    st.sidebar.markdown("---")
-    st.sidebar.info(
-        "This application uses a team of 4 autonomous AI agents to research, audit, and compile detailed technical reports."
-    )
+
+    # Top metrics display
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(label="Autonomous Agents", value="4 Specialized Roles")
+    with col2:
+        st.metric(label="Search Engine Integration", value="DuckDuckGo Search")
+    with col3:
+        st.metric(label="LLM Engine", value="GPT-OSS 20B (Groq)")
+
+    st.markdown("---")
 
     # Input section
+    st.subheader("🔍 Initiate Research Project")
     topic = st.text_input(
-        "Enter Research Topic:",
-        placeholder="e.g., Quantum Computing advancements in Drug Discovery"
+        "Specify Research Topic or Question:",
+        placeholder="e.g., AI Impact on HSE, Quantum Computing advances, or Renewable Energy Storage",
+        help="Enter any complex topic to run full multi-agent web investigation."
     )
 
-    if st.button("Start Research", type="primary"):
+    if st.button("🚀 Start Deep Research", type="primary", use_container_width=True):
         if not topic.strip():
-            st.warning("Please enter a valid research topic to begin.")
+            st.warning("⚠️ Please enter a valid research topic before proceeding.")
             return
 
         # Securely fetch secret
         api_key = validate_groq_api_key()
 
         # Run multi-agent team
-        with st.spinner("🤖 AI Agent Team is actively researching, analyzing, and writing your report... This may take 1-2 minutes."):
+        with st.spinner("🔄 Agent team is searching the web, cross-verifying facts, and compiling your report..."):
             try:
-                research_crew = MultiAgentResearchCrew(api_key=api_key, model_name=model_name)
+                research_crew = MultiAgentResearchCrew(api_key=api_key, model_name=DEFAULT_MODEL)
                 final_report = research_crew.run(topic=topic)
                 
-                st.success("Research completed successfully!")
+                st.success("✅ Research completed successfully!")
                 st.markdown("---")
                 
                 # Render Report
@@ -59,14 +103,15 @@ def main():
                 
                 # Download Button
                 st.download_button(
-                    label="📥 Download Report (.md)",
+                    label="📥 Download Complete Report (.md)",
                     data=final_report,
                     file_name=f"research_report_{topic.lower().replace(' ', '_')}.md",
-                    mime="text/markdown"
+                    mime="text/markdown",
+                    use_container_width=True
                 )
 
             except Exception as e:
-                st.error(f"An error occurred during agent execution: {str(e)}")
+                st.error(f"❌ An error occurred during agent execution: {str(e)}")
 
 if __name__ == "__main__":
     main()
