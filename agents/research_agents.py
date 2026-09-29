@@ -49,12 +49,9 @@ class ResearchAgents:
     def __init__(
         self,
         api_key: str,
-        model_name: str = "groq/openai/gpt-oss-120b",
+        model_name: str = "groq/openai/gpt-oss-20b",
     ):
-        # Explicitly set the environment variable for Groq authentication
         os.environ["GROQ_API_KEY"] = api_key
-
-        # Use our safe GroqLLM wrapper
         self.llm = GroqLLM(model=model_name, api_key=api_key)
         self.search_tool = DuckDuckGoSearchTool()
 
@@ -62,74 +59,67 @@ class ResearchAgents:
         return Agent(
             role="General Researcher",
             goal=(
-                "Discover comprehensive background facts, statistics, and"
-                " high-level summaries on the user's topic."
+                "Discover concise background facts, key statistics, and high-level"
+                " summaries on the user's topic."
             ),
             backstory=(
-                "You are an experienced investigative research journalist. Your"
-                " specialty is gathering broad, reliable information and"
-                " discovering relevant background data across credible web"
-                " sources."
+                "You are an investigative research journalist focused on brief,"
+                " accurate high-level facts."
             ),
             tools=[self.search_tool],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
+            max_iter=3,            # Limits tool search loops
+            max_execution_time=90, # Prevents long hanging execution
         )
 
     def technical_researcher(self) -> Agent:
         return Agent(
             role="Technical and Critical Researcher",
             goal=(
-                "Investigate technical mechanisms, architecture, real-world"
-                " applications, risks, and limitations."
+                "Investigate technical mechanisms, architectures, and implementation risks."
             ),
             backstory=(
-                "You are an analytical domain expert and systems analyst. You"
-                " dive into technical mechanics, evaluate claim feasibility,"
-                " uncover potential failure modes, and identify concrete"
-                " implementation details."
+                "You are a concise systems analyst focusing purely on structural"
+                " mechanics and feasibility."
             ),
             tools=[self.search_tool],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
+            max_iter=3,
+            max_execution_time=90,
         )
 
     def fact_checker(self) -> Agent:
         return Agent(
             role="Research Analyst and Fact Checker",
             goal=(
-                "Verify claims from research findings, eliminate duplicated"
-                " information, and resolve conflicting information."
+                "Verify claims, remove duplicate information, and resolve contradictions."
             ),
             backstory=(
-                "You are a meticulous lead researcher and fact-checker. You"
-                " filter noise, identify contradictory statements, validate"
-                " information against credible source URLs, and curate only"
-                " high-confidence insights."
+                "You are a lead fact-checker who condenses and validates information concise and clear."
             ),
             tools=[],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
+            max_iter=2,
         )
 
     def report_writer(self) -> Agent:
         return Agent(
             role="Senior Technical Report Writer",
             goal=(
-                "Synthesize verified research findings into a clear, beautifully"
-                " structured report with explicit source citations."
+                "Synthesize verified findings into a clean Markdown research report."
             ),
             backstory=(
-                "You are an expert technical editor. You write executive"
-                " summaries and full structured reports that translate complex"
-                " insights into clear sections while maintaining clear source"
-                " URL attributions."
+                "You are an expert technical editor who writes clear executive summaries and reports."
             ),
             tools=[],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
+            max_iter=2,
         )
